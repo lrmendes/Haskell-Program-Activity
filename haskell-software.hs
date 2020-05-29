@@ -8,13 +8,49 @@ type Quarantine = String
 type Date = String
 
 list_diseases :: [Disease]
-list_diseases = [("hepatiteA", "picorna",["icterıcia","fadiga","febre","mialgia"], "no"),
-                ("covid_19","corona", ["tosse","fadiga","febre","dispneia"], "yes"),
-                ("sarampo", "paramyxo",["manchas","erup¸c~oes", "tosse", "febre"], "yes")]
+list_diseases = []
 
 list_patients :: [Patient]
-list_patients = [("Joao",["tosse", "dispneia"],"2020,4,2"),
-                ("Ana",["icter´ıcia","mialgia"],"2020,4,8")]
+list_patients = []
 
-main =
-    print(list_diseases)
+insert_dise :: IO()
+insert_dise = do putStr "Name: "
+                 n <- getLine
+                 putStr "Virus: "
+                 c <- getLine
+                 putStr "Symptons: "
+                 d <- getLine
+                 putStr "Quarantine: "
+                 p <- getLine
+                 appendFile "diseases.txt" (n ++ "\t" ++ c ++ "\t" ++ d ++ "\t" ++ p ++ "\n")
+                 putStr "Insert another one?"
+                 resp <- getLine
+                 if (resp=="s" || resp=="S") then insert_dise else return()
+
+
+insert_pati :: IO()
+insert_pati = do putStr "Name: "
+                 n <- getLine
+                 putStr "Symptons: "
+                 d <- getLine
+                 putStr "Date: "
+                 p <- getLine
+                 appendFile "patients.txt" (n ++ "\t" ++ d ++ "\t" ++ p ++ "\n")
+                 putStr "Insert another one?"
+                 resp <- getLine
+                 if (resp=="s" || resp=="S") then insert_pati else return()
+
+main :: IO()
+main = do putStr "1-Insert new Disease\n"
+          putStr "2-Insert new Patient\n"
+          putStr "Op: "
+          resp <- getLine
+          if (resp=="1") then do insert_dise
+                              
+          else if (resp=="2") then do insert_pati
+                                 
+          else error "Opcao nao encontrada"
+
+          putStr "Deseja continuar (s/n)?"
+          resp <- getLine
+          if (resp=="s" || resp=="S") then main else return()
