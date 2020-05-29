@@ -1,1 +1,1 @@
-covid_19	corona	["tosse","febre"]	yes
+covid_19	corona	[tosse,febre]	yes

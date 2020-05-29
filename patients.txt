@@ -1,2 +1,3 @@
 Lucas	[Enjoo,Dor]	2020-4-2
 Joao	[Dor,Febre,Enjoo]	2020-10-03
+Paulo	[Dor]	2020-05-04
