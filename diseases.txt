@@ -1,2 +1,3 @@
 hepatiteA   picorna ictericia,fadiga,febre,mialgia    no
 sarampo paramyxo    manchas,erupcoes,tosse,febre  yes
+covid_19	corona	tosse,fadiga,febre,dispneia	yes

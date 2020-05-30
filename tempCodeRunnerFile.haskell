@@ -5,7 +5,7 @@ type Disease = (Name, Virus,Symptons,Quarantine)
 type Patient = (Name,Symptons,Date)
 type PatientQuarantine = (Name,Symptons,Date,Quarantine,Exit)
 
---type Disease2 = (Name, Virus,Symptons2,Quarantine)
+type Disease2 = (Name, Virus,Symptons2,Quarantine)
 
 type Name = String
 type Virus = String
@@ -14,10 +14,6 @@ type Symptons2 = String
 type Quarantine = String
 type Date = String
 type Exit = String
-type DiseaseName = String
-
---list_diseases2 :: [Disease2]
---list_diseases2 = []
 
 list_diseases :: [Disease]
 list_diseases = []
@@ -78,69 +74,53 @@ loadTab_patients = do s <-readFile "patients.txt"
                       return (gerlist_pat (map words (lines s)))
 
 gerlist_pat [] = []
-gerlist_pat ([n,d,p]:xs) = ((n::Name,split d::Symptons,p::Date)::Patient):(gerlist_pat xs)
+gerlist_pat ([n,d,p]:xs) = (n,d,p):(gerlist_pat xs)
 
 print_lst_pat [] =""
-print_lst_pat ((n,d,p):xs) = "Patient- Name = " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Date = " ++ p ++ "\n"  ++ (print_lst_pat xs) 
-
-isQuarantine :: [Patient] -> [Disease] -> [PatientQuarantine]
-isQuarantine _ [] = []
-isQuarantine [] _ = []
-isQuarantine [] [] = []
-isQuarantine ((xn,xd,xp):xs) ((yn,yc,yd,yp):ys) = if (checkIfContainsList xd yd >= 1 && yp == "yes") then ((xn::Name,xd::Symptons,xp::Date,yn::Quarantine,xp::Exit)::PatientQuarantine):isQuarantine xs ys else isQuarantine xs ys
-
-loadTab_quarantine p d = do return (isQuarantine p d)
-
---gerlist_qua [] [] = []
---gerlist_qua ((xn,xd,xp):xs) ((yn,yc,yd,yp):ys) = if (checkIfContainsList xd yd >= 1 && yp == "yes") then ((xn::Name,xd::Symptons,xp::Date,yp::Quarantine,xp::Exit)::PatientQuarantine):(gerlist_qua xs ys)
-
+print_lst_pat ((n,d,p):xs) = "Patient- name=" ++ n ++ ", Symptons= " ++ d ++ ", date= " ++ p ++ "\n"  ++ (print_lst_pat xs) 
 
 loadTab_diseases = do s <-readFile "diseases.txt"
                       return (gerlist_dis (map words (lines s)))
 
 gerlist_dis [] = []
-gerlist_dis ([n,c,d,p]:xs) = ((n::Name,c::Virus,split d::Symptons,p::Quarantine)::Disease):(gerlist_dis xs)
+gerlist_dis ([n,c,d,p]:xs) = ((n::Name,c::Virus,d::Symptons2,p::Quarantine)::Disease2):(gerlist_dis xs)
 
 print_lst_dis [] =""
-print_lst_dis ((n,c,d,p):xs) = "Disease- Name= " ++ n ++ ", Virus = " ++ c ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Quarantine = " ++ p ++ "\n" ++ (print_lst_dis xs)
-
-print_lst_qua [] =""
-print_lst_qua ((n,d,c,p,e):xs) = "Patient- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Quarantine = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua xs)
-
+print_lst_dis ((n,c,d,p):xs) = "Disease- name=" ++ n ++ ", Virus =" ++ c ++ ", Symptons= " ++ d ++ ", Quarantine= " ++ p ++ "\n" ++ (print_lst_dis xs)
 
 count_out_quarantine [] = 0
-count_out_quarantine (x:xs) = 1 + count_out_quarantine xs
+count_out_quarantine ((n,d,p):xs) = if (p=="yes") then 1 + count_out_quarantine xs else count_out_quarantine xs
+
+words2 s =  case dropWhile Foo.isSpace s of
+                      "" -> []
+                      s' -> w : words2 s''
+                            where (w, s'') = break Foo.isSpace s'
 
 split str = case break (==',') str of
                 (a, ',':b) -> a : split b
                 (a, "")    -> [a]
 
---print_symptons :: [Disease2] -> String
---print_symptons [] = ""
---print_symptons ((_,_,d,_):xs) = print_symptons_each d ++ "\n\n" ++ (print_symptons xs)
+print_symptons :: [Disease] -> String
+print_symptons [] = ""
+print_symptons ((_,_,d,_):xs) = print_symptons_each d ++ "\n\n" ++ (print_symptons xs)
 
---print_symptons_each d = print_symptons_each2(split d)
+print_symptons_each [] = ""
+print_symptons_each (d:xs) = d ++ "\n" ++ (print_symptons_each xs)
 
-print_symptons_each2 [] = ""
-print_symptons_each2 (x:xs) = x ++ ", " ++ print_symptons_each2 xs
-
-searchName :: String -> [Patient] -> [Disease] -> String
-searchName name [] y = "Nome Nao Encontrado\n"
-searchName name ((xn,xd,xp):xs) y = if (name == xn) then "Paciente = " ++ xn ++ " | Virus == " ++ xp ++ "\n" else searchName name xs y
+--print_symptons_each  [] = ""
+--print_symptons_each (d:xs) = break (==',') d
 
 
 main :: IO()
 main = do list_patients <- loadTab_patients
           list_diseases <- loadTab_diseases
-          list_patients_quarantine <- loadTab_quarantine list_patients list_diseases
           putStr "[1] Inserir Doenca\n"
           putStr "[2] Inserir Paciente\n"
           putStr "[3] Listar Todas Doencas\n"
           putStr "[4] Listar Todos Pacientes\n"
           putStr "[5] Listar Pacientes em Quarentena\n"
-          putStr "[6] Contar Pacientes em Quarentena\n"
-          putStr "[7] Buscar Virus por Nome de Paciente\n"
-          putStr "[8] Grafico\n"
+          putStr "[6] Contar Pacientes Fora de Quarentena\n"
+          putStr "[7] Grafico\n"
           putStr "Op: "
           resp <- getLine
           if (resp=="1") then do insert_dise
@@ -151,22 +131,14 @@ main = do list_patients <- loadTab_patients
 
           else if (resp=="4") then do putStr(print_lst_pat list_patients)
           
-          else if (resp=="5") then do putStr(print_lst_qua list_patients_quarantine)
-
-          else if (resp=="6") then do print(count_out_quarantine list_patients_quarantine)
-
-          else if (resp=="7") then do putStr "Buscar Nome: "
-                                      nam <- getLine
-                                      putStr(searchName nam list_patients list_diseases)
           -- Essa funcao indica que existem elementos iguais em ambas as listas (verificacao booleana)
-          --else if (resp=="5") then do if (checkIfContainsList ["febre","dor"] ["coriza","febre"] >= 1) then print("Existe elementos iguais") else print("Nao existem elementos iguais")
+          else if (resp=="5") then do if (checkIfContainsList ["febre","dor"] ["coriza","febre"] >= 1) then print("Existe elementos iguais") else print("Nao existem elementos iguais")
 
           -- Essa funcao retorna quantos elementos iguais foram encontrados em duas listas ( medidor que identifica se o paciente se encaixa em doenca de quarentena ou nao )
-          else if (resp=="8") then do print(compareSymptons ["febre","dor","caxumba","fraqueza"] list_diseases)
+          --else if (resp=="6") then do print(compareSymptons ["febre","dor","caxumba","fraqueza"] list_diseases)
 
-          --else if (resp=="7") then do putStr(print_symptons list_diseases2)
-
-          else if (resp=="9") then do print(print_lst_qua list_patients_quarantine)                 
+          else if (resp=="7") then do putStr(print_symptons list_diseases)
+                                 
           else error "Opcao nao encontrada"
 
           putStr "Deseja continuar (s/n)? : "
