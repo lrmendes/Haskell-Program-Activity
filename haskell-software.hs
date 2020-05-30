@@ -5,6 +5,8 @@ type Disease = (Name, Virus,Symptons,Quarantine)
 type Patient = (Name,Symptons,Date)
 type PatientQuarantine = (Name,Symptons,Date,Quarantine,Exit)
 
+type PatientVirus = (Name,Virus,Chance)
+
 --type Disease2 = (Name, Virus,Symptons2,Quarantine)
 
 type Name = String
@@ -15,6 +17,7 @@ type Quarantine = String
 type Date = String
 type Exit = String
 type DiseaseName = String
+type Chance = Integer
 
 --list_diseases2 :: [Disease2]
 --list_diseases2 = []
@@ -39,11 +42,60 @@ checkIfContainsList [] _ = 0
 checkIfContainsList [] [] = 0
 checkIfContainsList x (y:ys) = if (checkIfContains x y >= 1) then 1 + checkIfContainsList x ys else checkIfContainsList x ys
 
-compareSymptons :: [String] -> [Disease] -> Integer
-compareSymptons _ [] = 0
-compareSymptons [] _ = 0
-compareSymptons [] [] = 0
-compareSymptons x ((_,_,d,_):xs) = if (checkIfContainsList x d >= 1) then checkIfContainsList x d + compareSymptons x xs else compareSymptons x xs
+compareSymptons :: Patient -> [Disease] -> [PatientVirus]
+compareSymptons _ [] = []
+compareSymptons _ _ = []
+compareSymptons (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,yc::Virus,checkIfContainsList xd yd::Chance)::PatientVirus):compareSymptons (xn,xd,xp) ys
+
+maxChanceVirus :: [PatientVirus] -> Integer -> String
+maxChanceVirus [] aux = ""
+maxChanceVirus ((xn,xc,xd):xs) aux = if(xd > aux) then xc ++ maxChanceVirus xs xd 
+                                                       else maxChanceVirus xs aux
+
+
+compareSymptonsAll :: Patient -> [Disease] -> [PatientVirus]
+compareSymptonsAll _ [] = []
+compareSymptonsAll (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,yc::Virus,checkIfContainsList xd yd::Chance)::PatientVirus):compareSymptonsAll (xn,xd,xp) ys
+
+--compareSymptonsAll2 :: [Patient] -> [Disease] -> [PatientVirus]
+--compareSymptonsAll2 [] [] = []
+--compareSymptonsAll2 ((xn,xd,xp):xs) ((yn,yc,yd,yp):ys) = ((xn::Name,yc::Virus,checkIfContainsList xd yd::Chance)::PatientVirus):compareSymptonsAll2 xs ys
+
+compareSymptonsAll2 :: [Patient] -> [Disease] -> [PatientVirus]
+compareSymptonsAll2 [] [] = []
+compareSymptonsAll2 [] _ = []
+compareSymptonsAll2 ((xn,xd,xp):xs) y = (compareSymptonsAll (xn,xd,xp) y) ++ (compareSymptonsAll2 xs y)
+
+compareSymptonsAll3 :: String -> [Patient] -> [Disease] -> [PatientVirus]
+compareSymptonsAll3 name [] [] = []
+compareSymptonsAll3 name [] _ = []
+compareSymptonsAll3 name ((xn,xd,xp):xs) y = if (xn == name) then (compareSymptonsAll (xn,xd,xp) y) ++ (compareSymptonsAll3 name xs y) else (compareSymptonsAll3 name xs y) 
+
+--maxChanceVirus3 :: [PatientVirus] -> Integer -> String
+--maxChanceVirus3 [] aux = ""
+--maxChanceVirus3 ((xn,xc,xd):xs) aux = if(xd > aux) then do return maxChanceVirus3 xs xd else do return maxChanceVirus3 xs aux
+
+max_list :: [PatientVirus] -> String
+max_list [(n,v,c)] = "Virus: " ++ v
+max_list ((x1,v1,c1):(x2,v2,c2):xs) = if (c1 > c2) then max_list ((x1,v1,c1):xs) else max_list((x2,v2,c2):xs)
+
+--loadTab_patientVirus p d = do return (compareSymptons p d)
+
+
+--compareSymptons x ((_,_,d,_):xs) = if (checkIfContainsList x d >= 1) then checkIfContainsList x d + compareSymptons x xs else compareSymptons x xs
+
+
+--loadTab_diseases = do s <-readFile "diseases.txt"
+--                     return (gerlist_dis (map words (lines s)))
+
+--gerlist_dis [] = []
+--gerlist_dis ([n,c,d,p]:xs) = ((n::Name,c::Virus,split d::Symptons,p::Quarantine)::Disease):(gerlist_dis xs)
+
+--compareSymptons :: [String] -> [Disease] -> Integer
+--compareSymptons _ [] = 0
+--compareSymptons [] _ = 0
+--compareSymptons [] [] = 0
+--compareSymptons x ((_,_,d,_):xs) = if (checkIfContainsList x d >= 1) then checkIfContainsList x d + compareSymptons x xs else compareSymptons x xs
 
     -- "Disease- name=" ++ n ++ ", Virus =" ++ c ++ ", Symptons= " ++ d ++ ", Quarantine= " ++ p ++ "\n" ++ (print_lst_dis xs)
 
@@ -126,7 +178,8 @@ print_symptons_each2 (x:xs) = x ++ ", " ++ print_symptons_each2 xs
 
 searchName :: String -> [Patient] -> [Disease] -> String
 searchName name [] y = "Nome Nao Encontrado\n"
-searchName name ((xn,xd,xp):xs) y = if (name == xn) then "Paciente = " ++ xn ++ " | Virus == " ++ xp ++ "\n" else searchName name xs y
+--searchName name ((xn,xd,xp):xs) y = if (name == xn) then "Paciente = " ++ xn ++ " | Virus == " ++ xp ++ "\n" else searchName name xs y
+searchName name ((xn,xd,xp):xs) y = if (name == xn) then "Paciente = " ++ xn ++ " | Virus == " ++ (maxChanceVirus (compareSymptons (xn,xd,xp) y) 0)  ++ "\n" else searchName name xs y
 
 
 main :: IO()
@@ -156,17 +209,25 @@ main = do list_patients <- loadTab_patients
           else if (resp=="6") then do print(count_out_quarantine list_patients_quarantine)
 
           else if (resp=="7") then do putStr "Buscar Nome: "
-                                      nam <- getLine
-                                      putStr(searchName nam list_patients list_diseases)
+                                      name <- getLine
+                                      let resultado = compareSymptonsAll3 name list_patients list_diseases
+                                      if (resultado == []) then print("Usuario Nao Encontrado") else print(max_list resultado)
+
+          else if (resp=="11") then do putStr "Buscar Nome: "
+                                       nam <- getLine
+                                       putStr(searchName nam list_patients list_diseases)
           -- Essa funcao indica que existem elementos iguais em ambas as listas (verificacao booleana)
           --else if (resp=="5") then do if (checkIfContainsList ["febre","dor"] ["coriza","febre"] >= 1) then print("Existe elementos iguais") else print("Nao existem elementos iguais")
 
           -- Essa funcao retorna quantos elementos iguais foram encontrados em duas listas ( medidor que identifica se o paciente se encaixa em doenca de quarentena ou nao )
-          else if (resp=="8") then do print(compareSymptons ["febre","dor","caxumba","fraqueza"] list_diseases)
+          --else if (resp=="8") then do print(compareSymptons ["febre","dor","caxumba","fraqueza"] list_diseases)
 
           --else if (resp=="7") then do putStr(print_symptons list_diseases2)
 
-          else if (resp=="9") then do print(print_lst_qua list_patients_quarantine)                 
+          else if (resp=="9") then do print(print_lst_qua list_patients_quarantine)           
+
+          else if (resp=="10") then do print(compareSymptonsAll2 list_patients list_diseases)      
+
           else error "Opcao nao encontrada"
 
           putStr "Deseja continuar (s/n)? : "
