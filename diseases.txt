@@ -1,1 +1,2 @@
-covid_19	corona	[tosse,febre]	yes
+hepatiteA   picorna ictericia,fadiga,febre,mialgia    no
+sarampo paramyxo    manchas,erupcoes,tosse,febre  yes
