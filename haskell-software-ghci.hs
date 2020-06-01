@@ -21,6 +21,9 @@ type Exit = String
 type DiseaseName = String
 type Chance = Integer
 
+current_data :: Day
+current_data = parseDay "2020-06-02"
+
 list_diseases :: [Disease]
 list_diseases = []
 
@@ -126,9 +129,14 @@ gerlist_dis ([n,c,d,p]:xs) = ((n::Name,c::Virus,split d::Symptons,p::Quarantine)
 print_lst_dis [] =""
 print_lst_dis ((n,c,d,p):xs) = "Doenca- Name= " ++ n ++ ", Virus = " ++ c ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Quarantine = " ++ p ++ "\n" ++ (print_lst_dis xs)
 
-print_lst_qua [] =""
-print_lst_qua ((n,d,c,p,e):xs) = "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua xs)
+print_lst_qua date [] =""
+print_lst_qua date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua date xs) else (print_lst_qua date xs)
 
+print_lst_qua_newDate date [] =""
+print_lst_qua_newDate date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate date xs) else (print_lst_qua_newDate date xs)
+
+print_lst_qua_newDate2 date [] =""
+print_lst_qua_newDate2 date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) >= 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate2 date xs) else (print_lst_qua_newDate2 date xs)
 
 count_quarantine [] = 0
 count_quarantine (x:xs) = 1 + count_quarantine xs
@@ -140,18 +148,24 @@ split str = case break (==',') str of
 print_symptons_each2 [] = ""
 print_symptons_each2 (x:xs) = x ++ ", " ++ print_symptons_each2 xs
 
+load_date = do s <-readFile "systemdate.txt"
+               return (parseDay s)
+
 main :: IO()
 main = do list_patients <- loadTab_patients
           list_diseases <- loadTab_diseases
+          current_data <- load_date
           list_patients_quarantine <- loadTab_quarantine list_patients list_diseases
-          putStr "\n[1] Inserir Doenca\n"
+          putStr ("\n[ Data Atual do Sistema: " ++ showGregorian current_data ++  " ]\n")
+          putStr "[1] Inserir Doenca\n"
           putStr "[2] Inserir Paciente\n"
           putStr "[3] Listar Todas Doencas\n"
           putStr "[4] Listar Todos Pacientes\n"
           putStr "[5] Listar Pacientes em Quarentena\n"
           putStr "[6] Contar Pacientes em Quarentena\n"
           putStr "[7] Buscar Virus por Nome de Paciente\n"
-          putStr "[8] Grafico\n"
+          putStr "[8] Definir Data do Sistema para atualizar quarentena\n"
+          putStr "[9] Grafico\n"
           putStr "Op: "
           resp <- getLine
           if (resp=="1") then do insert_dise
@@ -162,7 +176,8 @@ main = do list_patients <- loadTab_patients
 
           else if (resp=="4") then do putStr(print_lst_pat list_patients)
           
-          else if (resp=="5") then do putStr(print_lst_qua list_patients_quarantine)
+          else if (resp=="5") then do let resul = print_lst_qua current_data list_patients_quarantine
+                                      if (resul == "") then putStr("\n Nenhum paciente encontra-se em quarentena!\n") else putStr(resul)
 
           else if (resp=="6") then do putStr("Total de Pacientes em Quarentena: ")
                                       print(count_quarantine list_patients_quarantine)
@@ -172,9 +187,17 @@ main = do list_patients <- loadTab_patients
                                       let resultado = compareSymptonsAll3 name list_patients list_diseases
                                       if (resultado == []) then print("Usuario Nao Encontrado") else print(max_list resultado)
 
-          else if (resp=="9") then do print(print_lst_qua list_patients_quarantine)       
-
-          else if (resp=="10") then do putStr(showGregorian (addDays 40 (parseDay "2020-04-02")) )
+          else if (resp=="8") then do putStr "Definir Data (yyyy-mm-dd): "
+                                      newdata <- getLine
+                                      let newdate = parseDay newdata
+                                      putStr "\nLista de Quarentena Atualizada [Pacientes que PERMANECERAM em quarentena com a nova data]:\n"
+                                      writeFile "systemdate.txt" (showGregorian newdate)
+                                      let newlist = print_lst_qua_newDate newdate list_patients_quarantine
+                                      if (newlist == "") then putStr(" - Nenhum paciente permaneceu na quarentena.\n") else putStr(newlist)
+                                      
+                                      putStr "\nLista de Quarentena Atualizada [Pacientes que SAIRAM da quarentena com a nova data]:\n"
+                                      let newlist = print_lst_qua_newDate2 newdate list_patients_quarantine
+                                      if (newlist == "") then putStr(" - Nenhum paciente saiu da quarentena.\n") else putStr(newlist)
 
           else error "Opcao nao encontrada"
 
