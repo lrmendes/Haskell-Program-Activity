@@ -6,8 +6,7 @@ import qualified Data.Char as Foo
 type Disease = (Name, Virus,Symptons,Quarantine)
 type Patient = (Name,Symptons,Date)
 type PatientQuarantine = (Name,Date,Exit)
-
-type PatientQuarantine2 = (Name,Symptons,Chance,Quarantine,Virus)
+type PatientQuarantineByName = (Name,Symptons,Chance,Quarantine,Virus)
 
 type PatientVirus = (Name,Virus,Chance)
 
@@ -33,6 +32,9 @@ list_patients = []
 list_patients_quarantine :: [PatientQuarantine]
 list_patients_quarantine = []
 
+-- #############################################################################################################################################################
+-- Verifica e Conta quantos valores em duas listas sao iguais
+
 checkIfContains :: [String] -> String -> Integer
 checkIfContains x y = case elemIndex y x of
                     Nothing -> 0
@@ -43,40 +45,51 @@ checkIfContainsList _ [] = 0
 checkIfContainsList [] _ = 0
 checkIfContainsList x (y:ys) = if (checkIfContains x y >= 1) then 1 + checkIfContainsList x ys else checkIfContainsList x ys
 
+-- #############################################################################################################################################################
+-- Realiza comparacoes entre o paciente e todas as doencas para descobrir a doenca mais provavel ( na busca por nome -> doenca | retorna se a doenca eh de quarentena ou nao )
+
 compareSymptonsAll :: Patient -> [Disease] -> [PatientVirus]
 compareSymptonsAll _ [] = []
 compareSymptonsAll (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,yc::Virus,checkIfContainsList xd yd::Chance)::PatientVirus):compareSymptonsAll (xn,xd,xp) ys
 
-compareSymptonsAll3 :: String -> [Patient] -> [Disease] -> [PatientVirus]
-compareSymptonsAll3 name [] [] = []
-compareSymptonsAll3 name [] _ = []
-compareSymptonsAll3 name ((xn,xd,xp):xs) y = if (xn == name) then (compareSymptonsAll (xn,xd,xp) y) ++ (compareSymptonsAll3 name xs y) else (compareSymptonsAll3 name xs y) 
+compareSymptonsAllByName :: String -> [Patient] -> [Disease] -> [PatientVirus]
+compareSymptonsAllByName name [] [] = []
+compareSymptonsAllByName name [] _ = []
+compareSymptonsAllByName name ((xn,xd,xp):xs) y = if (xn == name) then (compareSymptonsAll (xn,xd,xp) y) ++ (compareSymptonsAllByName name xs y) else (compareSymptonsAllByName name xs y) 
 
 max_list :: [PatientVirus] -> String
 max_list [(n,v,c)] = "Virus: " ++ v
 max_list ((x1,v1,c1):(x2,v2,c2):xs) = if (c1 > c2) then max_list ((x1,v1,c1):xs) else max_list((x2,v2,c2):xs)
 
 -- #############################################################################################################################################################
+-- Realiza comparacoes entre todos os paciente e todas as doencas para descobrir a doenca mais provavel de cada um ( retorna uma lista de pacientes e suas doencas )
 
-quaratineCompareSymptonsAll :: Patient -> [Disease] -> [PatientQuarantine2]
+quaratineCompareSymptonsAll :: Patient -> [Disease] -> [PatientQuarantineByName]
 quaratineCompareSymptonsAll _ [] = []
-quaratineCompareSymptonsAll (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,xd::Symptons,checkIfContainsList xd yd::Chance, yp::Quarantine, yc::Virus)::PatientQuarantine2):quaratineCompareSymptonsAll (xn,xd,xp) ys
+quaratineCompareSymptonsAll (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,xd::Symptons,checkIfContainsList xd yd::Chance, yp::Quarantine, yc::Virus)::PatientQuarantineByName):quaratineCompareSymptonsAll (xn,xd,xp) ys
 
-quarantineCompareSymptonsAll3 :: String -> [Patient] -> [Disease] -> [PatientQuarantine2]
-quarantineCompareSymptonsAll3 name [] [] = []
-quarantineCompareSymptonsAll3 name [] _ = []
-quarantineCompareSymptonsAll3 name _ [] = []
-quarantineCompareSymptonsAll3 name ((xn,xd,xp):xs) y = if (xn == name) then (quaratineCompareSymptonsAll (xn,xd,xp) y) ++ (quarantineCompareSymptonsAll3 name xs y) else (quarantineCompareSymptonsAll3 name xs y) 
+quarantinecompareSymptonsAllByName :: String -> [Patient] -> [Disease] -> [PatientQuarantineByName]
+quarantinecompareSymptonsAllByName name [] [] = []
+quarantinecompareSymptonsAllByName name [] _ = []
+quarantinecompareSymptonsAllByName name _ [] = []
+quarantinecompareSymptonsAllByName name ((xn,xd,xp):xs) y = if (xn == name) then (quaratineCompareSymptonsAll (xn,xd,xp) y) ++ (quarantinecompareSymptonsAllByName name xs y) else (quarantinecompareSymptonsAllByName name xs y) 
 
-quarantineMax_list :: [PatientQuarantine2] -> String
+quarantineMax_list :: [PatientQuarantineByName] -> String
 quarantineMax_list [(n,s,c,q,v)] = q
 quarantineMax_list ((n1,s1,c1,q1,v1):(n2,s2,c2,q2,v2):xs) = if (c1 > c2) then quarantineMax_list ((n1,s1,c1,q1,v1):xs) else quarantineMax_list((n2,s2,c2,q2,v2):xs)
 
---parseTimeM String :: Maybe UniversalTime
---parseTimeM False defaultTimeLocale "%Y-%m-%d" "2016-10-20" :: Maybe UniversalTime
+quarantineMax_listGraph :: [PatientQuarantineByName] -> String
+quarantineMax_listGraph [(n,s,c,q,v)] = "\n  " ++ n  ++ " -> " ++ v ++ ";" 
+quarantineMax_listGraph ((n1,s1,c1,q1,v1):(n2,s2,c2,q2,v2):xs) = if (c1 > c2) then quarantineMax_listGraph ((n1,s1,c1,q1,v1):xs) else quarantineMax_listGraph((n2,s2,c2,q2,v2):xs)
+
+-- #############################################################################################################################################################
+-- Funcao Que converte DATA-STRING para DATA-DAY
 
 parseDay :: String -> Day
 parseDay s = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" s
+
+-- #############################################################################################################################################################
+-- Funcoes que inserem Diseases e Patients
 
 insert_dise :: IO()
 insert_dise = do putStr "Name: "
@@ -107,6 +120,9 @@ insert_pati = do putStr "Name: "
                  resp <- getLine
                  if (resp=="s" || resp=="S") then insert_pati else return()
 
+-- #############################################################################################################################################################
+-- Funcoes que carregam a  tabela de PACIENTES e DISEASES ( a partir de arquivos TXT )
+
 loadTab_patients = do s <-readFile "patients.txt"
                       return (gerlist_pat (map words (lines s)))
 
@@ -114,19 +130,10 @@ gerlist_pat [] = []
 gerlist_pat ([n,d,p]:xs) = ((n::Name,split d::Symptons,p::Date)::Patient):(gerlist_pat xs)
 
 print_lst_pat [] =""
-print_lst_pat ((n,d,p):xs) = "Patient- Name = " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Date = " ++ p ++ "\n"  ++ (print_lst_pat xs) 
+print_lst_pat ((n,d,p):xs) = "Patient- Name = " ++ n ++ ", Symptons = [ " ++ print_symptons_each d ++ "], Date = " ++ p ++ "\n"  ++ (print_lst_pat xs) 
 
 gerlist_qua [] = []
 gerlist_qua ([n,d,p]:xs) = ((n::Name,split d::Symptons,p::Date)::Patient):(gerlist_pat xs)
-
-isQuarantine :: [Patient] -> [Disease] -> [PatientQuarantine]
-isQuarantine [] [] = []
-isQuarantine _ [] = []
-isQuarantine [] _ = []
-isQuarantine ((xn,xd,xp):xs) y = if (quarantineMax_list (quarantineCompareSymptonsAll3 xn ((xn,xd,xp):xs) y) == "yes") then return ((xn::Name,xp::Date,showGregorian (addDays 40 (parseDay xp))::Exit)::PatientQuarantine) ++ isQuarantine xs y else isQuarantine xs y
-                                                  
-
-loadTab_quarantine p d = do return (isQuarantine p d)
 
 loadTab_diseases = do s <-readFile "diseases.txt"
                       return (gerlist_dis (map words (lines s)))
@@ -134,34 +141,65 @@ loadTab_diseases = do s <-readFile "diseases.txt"
 gerlist_dis [] = []
 gerlist_dis ([n,c,d,p]:xs) = ((n::Name,c::Virus,split d::Symptons,p::Quarantine)::Disease):(gerlist_dis xs)
 
+-- #############################################################################################################################################################
+-- Funcao que carrega a  tabela de PACIENTES EM QUARENTENA -> Baseia na tabela de pacientes e preenche a tabela de quarentena.
+
+loadTab_quarantine p d = do return (isQuarantine p d)
+
+isQuarantine :: [Patient] -> [Disease] -> [PatientQuarantine]
+isQuarantine [] [] = []
+isQuarantine _ [] = []
+isQuarantine [] _ = []
+isQuarantine ((xn,xd,xp):xs) y = if (quarantineMax_list (quarantinecompareSymptonsAllByName xn ((xn,xd,xp):xs) y) == "yes") then return ((xn::Name,xp::Date,showGregorian (addDays 40 (parseDay xp))::Exit)::PatientQuarantine) ++ isQuarantine xs y else isQuarantine xs y
+
+-- #############################################################################################################################################################
+-- Funcoes que IMPRIMEM as tabelas de PACIENTES / DOENCAS / PACIENTES EM QUARENTENA
+
 print_lst_dis [] =""
-print_lst_dis ((n,c,d,p):xs) = "Doenca- Name= " ++ n ++ ", Virus = " ++ c ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Quarantine = " ++ p ++ "\n" ++ (print_lst_dis xs)
+print_lst_dis ((n,c,d,p):xs) = "Doenca- Name= " ++ n ++ ", Virus = " ++ c ++ ", Symptons = [ " ++ print_symptons_each d ++ "], Quarantine = " ++ p ++ "\n" ++ (print_lst_dis xs)
 
 print_lst_qua date [] =""
 print_lst_qua date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua date xs) else (print_lst_qua date xs)
 
-print_lst_qua_newDate date [] =""
-print_lst_qua_newDate date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate date xs) else (print_lst_qua_newDate date xs)
+print_lst_qua_newDate_still date [] =""
+print_lst_qua_newDate_still date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate_still date xs) else (print_lst_qua_newDate_still date xs)
 
-print_lst_qua_newDate2 date [] =""
-print_lst_qua_newDate2 date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) >= 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate2 date xs) else (print_lst_qua_newDate2 date xs)
+print_lst_qua_newDate_out date [] =""
+print_lst_qua_newDate_out date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) >= 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate_out date xs) else (print_lst_qua_newDate_out date xs)
 
-print_lst_qua2 [] =""
-print_lst_qua2 ((n,c,e):xs) = "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua2 xs)
-
+-- #############################################################################################################################################################
+-- Funcao que conta o numero de pacientes em quarentena
 
 count_quarantine [] = 0
 count_quarantine (x:xs) = 1 + count_quarantine xs
+
+-- #############################################################################################################################################################
+-- Funcao que converte uma STRING para [STRING] (inserindo sintomas separados por virgulas em uma LISTA)
 
 split str = case break (==',') str of
                 (a, ',':b) -> a : split b
                 (a, "")    -> [a]
 
-print_symptons_each2 [] = ""
-print_symptons_each2 (x:xs) = x ++ ", " ++ print_symptons_each2 xs
+print_symptons_each [] = ""
+print_symptons_each (x:xs) = x ++ ", " ++ print_symptons_each xs
+
+-- #############################################################################################################################################################
+-- Funcao que carrega o TXT com a data atual do sistema
 
 load_date = do s <-readFile "systemdate.txt"
                return (parseDay s)
+
+-- #############################################################################################################################################################
+-- Funcao que gera um grafico de ( Paciente -> Virus )
+
+graph :: [Patient] -> [Disease] -> String
+graph [] [] = ""
+graph _ [] = ""
+graph [] _ = ""
+graph ((xn,xd,xp):xs) y = quarantineMax_listGraph (quarantinecompareSymptonsAllByName xn ((xn,xd,xp):xs) y) ++ graph xs y
+
+-- #############################################################################################################################################################
+-- Funcao main que contem todas as acoes do programa
 
 main :: IO()
 main = do list_patients <- loadTab_patients
@@ -197,7 +235,7 @@ main = do list_patients <- loadTab_patients
 
           else if (resp=="7") then do putStr "Buscar Nome: "
                                       name <- getLine
-                                      let resultado = compareSymptonsAll3 name list_patients list_diseases
+                                      let resultado = compareSymptonsAllByName name list_patients list_diseases
                                       if (resultado == []) then print("Usuario Nao Encontrado") else print(max_list resultado)
 
           else if (resp=="8") then do putStr "Definir Data (yyyy-mm-dd): "
@@ -205,15 +243,15 @@ main = do list_patients <- loadTab_patients
                                       let newdate = parseDay newdata
                                       putStr "\nLista de Quarentena Atualizada [Pacientes que PERMANECERAM em quarentena com a nova data]:\n"
                                       writeFile "systemdate.txt" (showGregorian newdate)
-                                      let newlist = print_lst_qua_newDate newdate list_patients_quarantine
+                                      let newlist = print_lst_qua_newDate_still newdate list_patients_quarantine
                                       if (newlist == "") then putStr(" - Nenhum paciente permaneceu na quarentena.\n") else putStr(newlist)
                                       
                                       putStr "\nLista de Quarentena Atualizada [Pacientes que SAIRAM da quarentena com a nova data]:\n"
-                                      let newlist = print_lst_qua_newDate2 newdate list_patients_quarantine
+                                      let newlist = print_lst_qua_newDate_out newdate list_patients_quarantine
                                       if (newlist == "") then putStr(" - Nenhum paciente saiu da quarentena.\n") else putStr(newlist)
 
-          else if (resp=="9") then do print("Grafico!")
-
+          else if (resp=="9") then do putStr("\nDigraph {" ++ graph list_patients list_diseases ++"\n}\n")
+                                          
           else error "Opcao nao encontrada"
 
           putStr "\nDeseja continuar (s/n)? : "
