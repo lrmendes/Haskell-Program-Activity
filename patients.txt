@@ -1,3 +1,5 @@
 Lucas	fadiga,mialgia	2020-06-01
 Joao	manchas,febre,enjoo	2020-05-20
-Paulo	tosse	2020-05-02
+Yara	tosse	2020-06-02
+Paulo	fadiga	2020-05-25
+Maria	ictericia	2020-06-03

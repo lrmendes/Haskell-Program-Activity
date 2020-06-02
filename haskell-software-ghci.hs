@@ -5,7 +5,7 @@ import qualified Data.Char as Foo
 
 type Disease = (Name, Virus,Symptons,Quarantine)
 type Patient = (Name,Symptons,Date)
-type PatientQuarantine = (Name,Symptons,Date,Quarantine,Exit)
+type PatientQuarantine = (Name,Date,Exit)
 
 type PatientQuarantine2 = (Name,Symptons,Chance,Quarantine,Virus)
 
@@ -65,6 +65,7 @@ quaratineCompareSymptonsAll (xn,xd,xp) ((yn,yc,yd,yp):ys) = ((xn::Name,xd::Sympt
 quarantineCompareSymptonsAll3 :: String -> [Patient] -> [Disease] -> [PatientQuarantine2]
 quarantineCompareSymptonsAll3 name [] [] = []
 quarantineCompareSymptonsAll3 name [] _ = []
+quarantineCompareSymptonsAll3 name _ [] = []
 quarantineCompareSymptonsAll3 name ((xn,xd,xp):xs) y = if (xn == name) then (quaratineCompareSymptonsAll (xn,xd,xp) y) ++ (quarantineCompareSymptonsAll3 name xs y) else (quarantineCompareSymptonsAll3 name xs y) 
 
 quarantineMax_list :: [PatientQuarantine2] -> String
@@ -99,7 +100,9 @@ insert_pati = do putStr "Name: "
                  d <- getLine
                  putStr "Date (yyyy-mm-dd): "
                  p <- getLine
+                 print("Cadastrando...")
                  appendFile "patients.txt" (n ++ "\t" ++ d ++ "\t" ++ p ++ "\n")
+                 print("Sucesso!")
                  putStr "Insert another one? : "
                  resp <- getLine
                  if (resp=="s" || resp=="S") then insert_pati else return()
@@ -113,11 +116,16 @@ gerlist_pat ([n,d,p]:xs) = ((n::Name,split d::Symptons,p::Date)::Patient):(gerli
 print_lst_pat [] =""
 print_lst_pat ((n,d,p):xs) = "Patient- Name = " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Date = " ++ p ++ "\n"  ++ (print_lst_pat xs) 
 
+gerlist_qua [] = []
+gerlist_qua ([n,d,p]:xs) = ((n::Name,split d::Symptons,p::Date)::Patient):(gerlist_pat xs)
+
 isQuarantine :: [Patient] -> [Disease] -> [PatientQuarantine]
+isQuarantine [] [] = []
 isQuarantine _ [] = []
 isQuarantine [] _ = []
-isQuarantine ((xn,xd,xp):xs) ((yn,yc,yd,yp):ys) = do let resultado = quarantineCompareSymptonsAll3 xn ((xn,xd,xp):xs) ((yn,yc,yd,yp):ys)
-                                                     if (resultado == []) then isQuarantine xs ys else if (quarantineMax_list resultado == "yes") then ((xn::Name,xd::Symptons,xp::Date,yn::Quarantine,showGregorian (addDays 40 (parseDay xp))::Exit)::PatientQuarantine):isQuarantine xs ys else isQuarantine xs ys 
+isQuarantine ((xn,xd,xp):xs) y = if (quarantineMax_list (quarantineCompareSymptonsAll3 xn ((xn,xd,xp):xs) y) == "yes") then return ((xn::Name,xp::Date,showGregorian (addDays 40 (parseDay xp))::Exit)::PatientQuarantine) ++ isQuarantine xs y else isQuarantine xs y
+                                                  
+
 loadTab_quarantine p d = do return (isQuarantine p d)
 
 loadTab_diseases = do s <-readFile "diseases.txt"
@@ -130,13 +138,17 @@ print_lst_dis [] =""
 print_lst_dis ((n,c,d,p):xs) = "Doenca- Name= " ++ n ++ ", Virus = " ++ c ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Quarantine = " ++ p ++ "\n" ++ (print_lst_dis xs)
 
 print_lst_qua date [] =""
-print_lst_qua date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua date xs) else (print_lst_qua date xs)
+print_lst_qua date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua date xs) else (print_lst_qua date xs)
 
 print_lst_qua_newDate date [] =""
-print_lst_qua_newDate date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate date xs) else (print_lst_qua_newDate date xs)
+print_lst_qua_newDate date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) < 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate date xs) else (print_lst_qua_newDate date xs)
 
 print_lst_qua_newDate2 date [] =""
-print_lst_qua_newDate2 date ((n,d,c,p,e):xs) = if ( (diffDays date (parseDay e)) >= 0) then "Paciente- Name= " ++ n ++ ", Symptons = [ " ++ print_symptons_each2 d ++ "], Doenca = " ++ p ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate2 date xs) else (print_lst_qua_newDate2 date xs)
+print_lst_qua_newDate2 date ((n,c,e):xs) = if ( (diffDays date (parseDay e)) >= 0) then "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua_newDate2 date xs) else (print_lst_qua_newDate2 date xs)
+
+print_lst_qua2 [] =""
+print_lst_qua2 ((n,c,e):xs) = "Paciente- Name= " ++ n ++ ", DateEnter = " ++ c ++ ", DateExit = " ++ e ++ "\n" ++ (print_lst_qua2 xs)
+
 
 count_quarantine [] = 0
 count_quarantine (x:xs) = 1 + count_quarantine xs
@@ -156,7 +168,8 @@ main = do list_patients <- loadTab_patients
           list_diseases <- loadTab_diseases
           current_data <- load_date
           list_patients_quarantine <- loadTab_quarantine list_patients list_diseases
-          putStr ("\n[ Data Atual do Sistema: " ++ showGregorian current_data ++  " ]\n")
+          print("...")
+          putStr ("[ Data Atual do Sistema: " ++ showGregorian current_data ++  " ]\n")
           putStr "[1] Inserir Doenca\n"
           putStr "[2] Inserir Paciente\n"
           putStr "[3] Listar Todas Doencas\n"
@@ -198,6 +211,8 @@ main = do list_patients <- loadTab_patients
                                       putStr "\nLista de Quarentena Atualizada [Pacientes que SAIRAM da quarentena com a nova data]:\n"
                                       let newlist = print_lst_qua_newDate2 newdate list_patients_quarantine
                                       if (newlist == "") then putStr(" - Nenhum paciente saiu da quarentena.\n") else putStr(newlist)
+
+          else if (resp=="9") then do print("Grafico!")
 
           else error "Opcao nao encontrada"
 
